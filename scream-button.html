@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUTTON THAT SCREAMS</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a0000;
+    color: #fff;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    transition: background 0.1s;
+    user-select: none;
+  }
+
+  #glitch-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    mix-blend-mode: screen;
+  }
+
+  #title {
+    font-size: 2rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    transition: font-size 0.3s ease, transform 0.1s;
+    text-align: center;
+    padding: 0 1rem;
+  }
+
+  #agony {
+    font-size: 1.1rem;
+    letter-spacing: 0.3em;
+    color: #ff3333;
+    margin-bottom: 3rem;
+    transition: font-size 0.3s ease, color 0.2s;
+    text-align: center;
+  }
+
+  #scream-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid #ff2222;
+    background: #2a0000;
+    color: #ff4444;
+    font-family: 'Inter', Arial, sans-serif;
+    font-weight: 900;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: transform 0.05s, box-shadow 0.1s, background 0.1s;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 10;
+  }
+
+  #scream-btn:hover {
+    background: #3a0000;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+  }
+
+  #scream-btn:active {
+    transform: scale(0.9);
+    background: #ff0000;
+    color: #000;
+  }
+
+  #subtitle {
+    position: fixed;
+    bottom: 2rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
+    color: #441111;
+    text-transform: uppercase;
+  }
+
+  .screen-flash {
+    animation: flash 0.15s ease-out;
+  }
+
+  @keyframes flash {
+    0% { background: #ff0000; }
+    100% { background: #1a0000; }
+  }
+
+  @keyframes glitchShake {
+    0% { transform: translate(0, 0) skew(0deg); }
+    10% { transform: translate(-8px, 3px) skew(-2deg); }
+    20% { transform: translate(6px, -4px) skew(3deg); }
+    30% { transform: translate(-3px, 6px) skew(-1deg); }
+    40% { transform: translate(7px, -2px) skew(2deg); }
+    50% { transform: translate(-5px, 4px) skew(-3deg); }
+    60% { transform: translate(4px, -6px) skew(1deg); }
+    70% { transform: translate(-6px, 2px) skew(-2deg); }
+    80% { transform: translate(3px, -3px) skew(3deg); }
+    90% { transform: translate(-2px, 5px) skew(-1deg); }
+    100% { transform: translate(0, 0) skew(0deg); }
+  }
+
+  .glitch-text {
+    animation: glitchShake 0.3s linear;
+  }
+
+  #scan-lines {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 4px
+    );
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+</style>
+</head>
+<body>
+<canvas id="glitch-overlay"></canvas>
+<div id="scan-lines"></div>
+
+<div id="title">BUTTON THAT SCREAMS</div>
+<div id="agony">AGONY LEVEL: 0</div>
+<button id="scream-btn">scream</button>
+<div id="subtitle">nothing else happens. ever.</div>
+
+<script>
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+const activeNodes = [];
+let agonyLevel = 0;
+const title = document.getElementById('title');
+const agonyDisplay = document.getElementById('agony');
+const btn = document.getElementById('scream-btn');
+const body = document.body;
+const glitchCanvas = document.getElementById('glitch-overlay');
+const glitchCtxCanvas = glitchCanvas.getContext('2d');
+const scanLines = document.getElementById('scan-lines');
+
+function resizeCanvas() {
+  glitchCanvas.width = window.innerWidth;
+  glitchCanvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Generate a scream-like sound using Web Audio API
+function createScream(distortionLevel) {
+  if (!audioCtx) audioCtx = new AudioCtx();
+
+  const duration = 0.6 + Math.random() * 0.8;
+  const baseFreq = 280 + Math.random() * 200;
+
+  // Main voice oscillator
+  const osc1 = audioCtx.createOscillator();
+  osc1.type = 'sawtooth';
+  osc1.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+  osc1.frequency.exponentialRampToValueAtTime(baseFreq * (1.5 + Math.random()), audioCtx.currentTime + 0.05);
+  osc1.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, audioCtx.currentTime + duration);
+
+  // Second harmonic
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'square';
+  osc2.frequency.setValueAtTime(baseFreq * 1.5, audioCtx.currentTime);
+  osc2.frequency.exponentialRampToValueAtTime(baseFreq * 2.2, audioCtx.currentTime + 0.08);
+  osc2.frequency.exponentialRampToValueAtTime(baseFreq, audioCtx.currentTime + duration);
+
+  // Sub bass growl
+  const osc3 = audioCtx.createOscillator();
+  osc3.type = 'sawtooth';
+  osc3.frequency.setValueAtTime(baseFreq * 0.5, audioCtx.currentTime);
+
+  // Noise for breathiness
+  const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < noiseData.length; i++) {
+    noiseData[i] = (Math.random() * 2 - 1) * 0.3;
+  }
+  const noiseSource = audioCtx.createBufferSource();
+  noiseSource.buffer = noiseBuffer;
+
+  // Noise filter to shape it like a voice
+  const noiseFilter = audioCtx.createBiquadFilter();
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.value = baseFreq * 3;
+  noiseFilter.Q.value = 2;
+
+  // Formant filters to make it voice-like
+  const formant1 = audioCtx.createBiquadFilter();
+  formant1.type = 'bandpass';
+  formant1.frequency.value = 700 + Math.random() * 300;
+  formant1.Q.value = 5;
+
+  const formant2 = audioCtx.createBiquadFilter();
+  formant2.type = 'bandpass';
+  formant2.frequency.value = 1200 + Math.random() * 600;
+  formant2.Q.value = 5;
+
+  // Gain envelopes
+  const mainGain = audioCtx.createGain();
+  const volume = Math.min(0.15 + agonyLevel * 0.03, 0.55);
+  mainGain.gain.setValueAtTime(0, audioCtx.currentTime);
+  mainGain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.02);
+  mainGain.gain.setValueAtTime(volume, audioCtx.currentTime + duration * 0.3);
+  mainGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+  const osc2Gain = audioCtx.createGain();
+  osc2Gain.gain.value = 0.3;
+
+  const osc3Gain = audioCtx.createGain();
+  osc3Gain.gain.value = 0.15;
+
+  const noiseGain = audioCtx.createGain();
+  noiseGain.gain.value = 0.12;
+
+  // Vibrato for realism
+  const vibrato = audioCtx.createOscillator();
+  const vibratoGain = audioCtx.createGain();
+  vibrato.frequency.value = 5 + Math.random() * 3;
+  vibratoGain.gain.value = 15 + Math.random() * 20;
+  vibrato.connect(vibratoGain);
+  vibratoGain.connect(osc1.frequency);
+  vibratoGain.connect(osc2.frequency);
+
+  // Distortion for higher agony levels
+  let distortion = null;
+  if (distortionLevel > 0) {
+    distortion = audioCtx.createWaveShaper();
+    const samples = 44100;
+    const curve = new Float32Array(samples);
+    const amount = distortionLevel * 50;
+    for (let i = 0; i < samples; i++) {
+      const x = (i * 2) / samples - 1;
+      curve[i] = ((3 + amount) * x * 20 * (Math.PI / 180)) / (Math.PI + amount * Math.abs(x));
+    }
+    distortion.curve = curve;
+    distortion.oversample = '4x';
+  }
+
+  // Random effects after level 7
+  let delayNode = null;
+  if (agonyLevel >= 7 && Math.random() > 0.3) {
+    delayNode = audioCtx.createDelay(1.0);
+    delayNode.delayTime.value = 0.05 + Math.random() * 0.15;
+    const feedback = audioCtx.createGain();
+    feedback.gain.value = 0.3 + Math.random() * 0.3;
+    delayNode.connect(feedback);
+    feedback.connect(delayNode);
+  }
+
+  // Pitch shift effect (simulate backwards by reversing pitch direction)
+  if (agonyLevel >= 7 && Math.random() > 0.5) {
+    osc1.frequency.setValueAtTime(baseFreq * 0.5, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(baseFreq * 3, audioCtx.currentTime + duration);
+  }
+
+  // Connect the graph
+  const merger = audioCtx.createGain();
+  merger.gain.value = 1;
+
+  osc1.connect(formant1);
+  osc1.connect(formant2);
+  formant1.connect(merger);
+  formant2.connect(merger);
+
+  osc2.connect(osc2Gain);
+  osc2Gain.connect(merger);
+
+  osc3.connect(osc3Gain);
+  osc3Gain.connect(merger);
+
+  noiseSource.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(merger);
+
+  let finalNode = merger;
+
+  if (distortion) {
+    merger.connect(distortion);
+    finalNode = distortion;
+  }
+
+  if (delayNode) {
+    finalNode.connect(delayNode);
+    delayNode.connect(mainGain);
+  } else {
+    finalNode.connect(mainGain);
+  }
+
+  mainGain.connect(audioCtx.destination);
+
+  const now = audioCtx.currentTime;
+  osc1.start(now);
+  osc2.start(now);
+  osc3.start(now);
+  vibrato.start(now);
+  noiseSource.start(now);
+
+  const stopTime = now + duration + 0.1;
+  osc1.stop(stopTime);
+  osc2.stop(stopTime);
+  osc3.stop(stopTime);
+  vibrato.stop(stopTime);
+  noiseSource.stop(stopTime + (delayNode ? 0.5 : 0));
+
+  // Cleanup
+  setTimeout(() => {
+    mainGain.disconnect();
+  }, (duration + 1.5) * 1000);
+}
+
+function doGlitch() {
+  if (agonyLevel < 10) return;
+
+  const intensity = Math.min((agonyLevel - 9) * 0.15, 1);
+  const w = glitchCanvas.width;
+  const h = glitchCanvas.height;
+
+  glitchCtxCanvas.clearRect(0, 0, w, h);
+
+  // Random colored rectangles
+  const numRects = Math.floor(Math.random() * 8 * intensity);
+  for (let i = 0; i < numRects; i++) {
+    const rx = Math.random() * w;
+    const ry = Math.random() * h;
+    const rw = Math.random() * w * 0.5;
+    const rh = 2 + Math.random() * 15;
+    glitchCtxCanvas.fillStyle = `rgba(${Math.random() > 0.5 ? 255 : 0}, ${Math.random() > 0.7 ? 255 : 0}, ${Math.random() > 0.8 ? 255 : 0}, ${Math.random() * 0.3})`;
+    glitchCtxCanvas.fillRect(rx, ry, rw, rh);
+  }
+
+  // Horizontal displacement lines
+  if (Math.random() < intensity * 0.5) {
+    const sliceY = Math.random() * h;
+    const sliceH = 5 + Math.random() * 30;
+    glitchCtxCanvas.fillStyle = `rgba(255, 0, 0, 0.15)`;
+    glitchCtxCanvas.fillRect(0, sliceY, w, sliceH);
+  }
+
+  setTimeout(() => {
+    glitchCtxCanvas.clearRect(0, 0, w, h);
+  }, 80 + Math.random() * 120);
+}
+
+function updateVisuals() {
+  // Title grows
+  const titleSize = Math.min(2 + agonyLevel * 0.35, 7);
+  title.style.fontSize = titleSize + 'rem';
+
+  // Agony display
+  agonyDisplay.textContent = `AGONY LEVEL: ${agonyLevel}`;
+  const agonySize = Math.min(1.1 + agonyLevel * 0.12, 3);
+  agonyDisplay.style.fontSize = agonySize + 'rem';
+
+  // Background gets redder
+  const red = Math.min(26 + agonyLevel * 12, 140);
+  body.style.background = `rgb(${red}, 0, 0)`;
+
+  // Text color intensifies
+  if (agonyLevel >= 5) {
+    agonyDisplay.style.color = '#ff0000';
+    agonyDisplay.style.textShadow = `0 0 ${agonyLevel * 3}px rgba(255,0,0,0.6)`;
+    title.style.textShadow = `0 0 ${agonyLevel * 2}px rgba(255,100,100,0.4)`;
+  }
+
+  // Scan lines appear
+  if (agonyLevel >= 8) {
+    scanLines.style.opacity = Math.min((agonyLevel - 7) * 0.2, 0.6);
+  }
+
+  // Screen flash
+  body.classList.remove('screen-flash');
+  void body.offsetWidth;
+  body.classList.add('screen-flash');
+
+  // Text glitch shake
+  if (agonyLevel >= 6) {
+    title.classList.add('glitch-text');
+    setTimeout(() => title.classList.remove('glitch-text'), 300);
+  }
+
+  // Glitch at level 10+
+  if (agonyLevel >= 10) {
+    doGlitch();
+    // Random additional glitches
+    if (Math.random() > 0.4) {
+      setTimeout(doGlitch, 100 + Math.random() * 200);
+    }
+    if (Math.random() > 0.6) {
+      setTimeout(doGlitch, 300 + Math.random() * 300);
+    }
+  }
+
+  // Subtitle gets more unhinged
+  const subtitle = document.getElementById('subtitle');
+  const subtitles = [
+    'nothing else happens. ever.',
+    'nothing else happens. ever.',
+    'nothing else happens. ever.',
+    'why are you still pressing this.',
+    'this is all there is.',
+    'there is no second feature.',
+    'you could stop.',
+    'but you won\'t.',
+    'the screaming continues.',
+    'you did this.',
+    'AAAAAAAAAAA',
+    'this is your fault.',
+    'the void screams back.',
+    'are you okay?',
+    'no really. are you okay.',
+    'MAXIMUM AGONY ACHIEVED',
+    'there is no god here. only screams.',
+    'you\'ve been pressing this for a while.',
+    'he can\'t scream forever. or can he.',
+    'this was a mistake.',
+  ];
+  subtitle.textContent = subtitles[Math.min(agonyLevel, subtitles.length - 1)];
+}
+
+btn.addEventListener('click', () => {
+  agonyLevel++;
+
+  const distortion = agonyLevel >= 7 ? (agonyLevel - 6) * 0.15 : 0;
+  createScream(distortion);
+
+  // Layer additional screams at higher levels
+  if (agonyLevel >= 4) {
+    setTimeout(() => createScream(distortion * 0.5), 30 + Math.random() * 80);
+  }
+  if (agonyLevel >= 8) {
+    setTimeout(() => createScream(distortion), 60 + Math.random() * 100);
+  }
+  if (agonyLevel >= 12) {
+    setTimeout(() => createScream(distortion * 1.5), 100 + Math.random() * 150);
+  }
+
+  updateVisuals();
+});
+
+// Ambient glitch loop for high agony
+setInterval(() => {
+  if (agonyLevel >= 12 && Math.random() > 0.6) {
+    doGlitch();
+  }
+}, 500);
+</script>
+</body>
+</html>
